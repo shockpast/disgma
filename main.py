@@ -14,22 +14,23 @@ import utils
 import json
 
 ### env
-steamcmd_path = os.getenv("STEAMCMD_PATH")
-binaries_path = os.getenv("BINARIES_PATH")
-data_path = os.getenv("DATA_PATH")
+STEAMCMD_PATH = os.getenv("STEAMCMD_PATH")
+BINARIES_PATH = os.getenv("BINARIES_PATH")
+DATA_PATH = os.getenv("DATA_PATH")
 
-app_id = os.getenv('STEAMCMD_APPID')
-item_id = os.getenv('STEAMCMD_ITEMID')
+APP_ID = os.getenv('STEAMCMD_APPID')
+ITEM_ID = os.getenv('STEAMCMD_ITEMID')
 
-discord_token = os.getenv("DISCORD_TOKEN")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+DISCORD_OWNER_ID = os.getenv("DISCORD_OWNER_ID")
 ###
 
 ### vars
-os_type = "linux" if platform.system() == "Linux" else "windows"
-executable_type = ".exe" if os_type == "windows" else ""
+OS_TYPE = "linux" if platform.system() == "Linux" else "windows"
+EXECUTABLE_TYPE = ".exe" if OS_TYPE == "windows" else ""
 
-steamcmd = steamcmd_path + "/steamcmd.exe"
-workshop = steamcmd_path + f"/steamapps/workshop/content/{os.getenv('STEAMCMD_APPID')}"
+STEAMCMD_EXECUTABLE = STEAMCMD_PATH + "/steamcmd.exe"
+WORKSHOP_PATH = STEAMCMD_PATH + f"/steamapps/workshop/content/{os.getenv('STEAMCMD_APPID')}"
 ###
 
 ### worker
@@ -48,7 +49,7 @@ async def download_worker(user_id: int, item_id: int, interaction: discord.Inter
     start = time.time()
 
     process = await asyncio.create_subprocess_shell(
-      f"{steamcmd} +login anonymous +workshop_download_item {app_id} {item_id} +quit",
+      f"{STEAMCMD_EXECUTABLE} +login anonymous +workshop_download_item {APP_ID} {item_id} +quit",
       stdout=asyncio.subprocess.DEVNULL,
       stderr=asyncio.subprocess.DEVNULL
     )
@@ -56,19 +57,19 @@ async def download_worker(user_id: int, item_id: int, interaction: discord.Inter
 
     if not os.path.exists("./data/"):
       return await interaction.channel.send("`data` directory not found")
-    if not os.path.exists(f"./binaries/{os_type}/fastgmad{executable_type}"):
+    if not os.path.exists(f"./binaries/{OS_TYPE}/fastgmad{EXECUTABLE_TYPE}"):
       return await interaction.channel.send("`fastgmad` binary not found")
 
-    os.makedirs(f"{data_path}/{item_id}", exist_ok=True)
+    os.makedirs(f"{DATA_PATH}/{item_id}", exist_ok=True)
 
-    gma_files = [f for f in os.listdir(f"{workshop}/{item_id}") if f.endswith('.gma')]
+    gma_files = [f for f in os.listdir(f"{WORKSHOP_PATH}/{item_id}") if f.endswith('.gma')]
     if not gma_files:
       return await interaction.channel.send(f"no `.gma` files found for item `{item_id}`")
 
     extract_process = await asyncio.create_subprocess_shell(
-      f"{binaries_path}/{os_type}/fastgmad{executable_type} extract "
-      f"-file {workshop}/{item_id}/{gma_files[0]} "
-      f"-out {data_path}/{item_id}",
+      f"{BINARIES_PATH}/{OS_TYPE}/fastgmad{EXECUTABLE_TYPE} extract "
+      f"-file {WORKSHOP_PATH}/{item_id}/{gma_files[0]} "
+      f"-out {DATA_PATH}/{item_id}",
       stdout=asyncio.subprocess.DEVNULL,
       stderr=asyncio.subprocess.DEVNULL
     )
@@ -96,7 +97,7 @@ async def on_ready():
   description = "Sync the commands with the Discord API",
 )
 async def sync(interaction: discord.Interaction):
-  if interaction.user.id != 468359358586159105:
+  if interaction.user.id != DISCORD_OWNER_ID:
     return await interaction.response.send_message("you don't have permission to run this command", ephemeral=True)
 
   try:
@@ -140,10 +141,10 @@ async def status(interaction: discord.Interaction):
 @app_commands.describe(item_id="The ID of the item to view")
 @app_commands.describe(file_name="The name of the file to view")
 async def view(interaction: discord.Interaction, item_id: int, file_name: str):
-  if not os.path.exists(f"{data_path}/{item_id}/{os.path.normpath(file_name)}"):
+  if not os.path.exists(f"{DATA_PATH}/{item_id}/{os.path.normpath(file_name)}"):
     return await interaction.response.send_message("the file you requested does not exist.", ephemeral=True)
 
-  with open(f"{data_path}/{item_id}/{os.path.normpath(file_name)}", "rb") as f:
+  with open(f"{DATA_PATH}/{item_id}/{os.path.normpath(file_name)}", "rb") as f:
     await interaction.response.send_message(file=discord.File(f, file_name))
 
 @tree.command(
@@ -152,20 +153,20 @@ async def view(interaction: discord.Interaction, item_id: int, file_name: str):
 )
 @app_commands.describe(item_id="The ID of the item to list")
 async def list(interaction: discord.Interaction, item_id: int):
-  if not os.path.exists(f"{data_path}/{item_id}"):
+  if not os.path.exists(f"{DATA_PATH}/{item_id}"):
     return await interaction.response.send_message("the item you requested does not exist", ephemeral=True)
 
-  tree_output = utils.generate_tree(f"{data_path}/{item_id}")
+  tree_output = utils.generate_tree(f"{DATA_PATH}/{item_id}")
   if not tree_output:
     return await interaction.response.send_message("no files found for this item", ephemeral=True)
 
   tree_text = "\n".join(tree_output)
   if len(tree_text) > 1990:
-    with open(f"{data_path}/{item_id}/file_list.txt", "w", encoding="utf-8") as f:
+    with open(f"{DATA_PATH}/{item_id}/file_list.txt", "w", encoding="utf-8") as f:
       f.write(tree_text)
 
-    await interaction.response.send_message(file=discord.File(f"{data_path}/{item_id}/file_list.txt"))
-    os.remove(f"{data_path}/{item_id}/file_list.txt")
+    await interaction.response.send_message(file=discord.File(f"{DATA_PATH}/{item_id}/file_list.txt"))
+    os.remove(f"{DATA_PATH}/{item_id}/file_list.txt")
   else:
     await interaction.response.send_message(f"```\n{tree_text}\n```")
 
@@ -175,16 +176,16 @@ async def list(interaction: discord.Interaction, item_id: int):
 )
 @app_commands.describe(item_id="The ID of the item to delete")
 async def delete(interaction: discord.Interaction, item_id: int):
-  if not os.path.exists(f"{data_path}/{item_id}"):
+  if not os.path.exists(f"{DATA_PATH}/{item_id}"):
     return await interaction.response.send_message("the item you requested does not exist", ephemeral=True)
 
-  for root, dirs, files in os.walk(f"{data_path}/{item_id}", topdown=False):
+  for root, dirs, files in os.walk(f"{DATA_PATH}/{item_id}", topdown=False):
     for name in files:
       os.remove(os.path.join(root, name))
     for name in dirs:
       os.rmdir(os.path.join(root, name))
 
-  os.rmdir(f"{data_path}/{item_id}")
+  os.rmdir(f"{DATA_PATH}/{item_id}")
 
   await interaction.response.send_message(f"item `{item_id}` has been deleted", ephemeral=True)
 
@@ -193,10 +194,10 @@ async def delete(interaction: discord.Interaction, item_id: int):
   description="Delete all items"
 )
 async def delete_all(interaction: discord.Interaction):
-  if interaction.user.id != 468359358586159105:
+  if interaction.user.id != DISCORD_OWNER_ID:
     return await interaction.response.send_message("you don't have permission to run this command", ephemeral=True)
 
-  for root, dirs, files in os.walk(data_path, topdown=False):
+  for root, dirs, files in os.walk(DATA_PATH, topdown=False):
     for name in files:
       os.remove(os.path.join(root, name))
     for name in dirs:
@@ -209,16 +210,16 @@ async def delete_all(interaction: discord.Interaction):
   description="List all downloaded items"
 )
 async def list_all(interaction: discord.Interaction):
-  if not os.path.exists(data_path):
+  if not os.path.exists(DATA_PATH):
     return await interaction.response.send_message("no items have been downloaded yet", ephemeral=True)
 
-  items = [d for d in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, d))]
+  items = [d for d in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, d))]
   if not items:
     return await interaction.response.send_message("no items have been downloaded yet", ephemeral=True)
 
   item_details = []
   for item in sorted(items):
-    addon_path = os.path.join(data_path, item, "addon.json")
+    addon_path = os.path.join(DATA_PATH, item, "addon.json")
     if os.path.exists(addon_path):
       try:
         with open(addon_path, 'r', encoding='utf-8') as f:
@@ -234,4 +235,4 @@ async def list_all(interaction: discord.Interaction):
   await interaction.response.send_message(f"```\n{items_text}\n```", ephemeral=True)
 
 ###
-bot.run(token=discord_token)
+bot.run(token=DISCORD_TOKEN)
