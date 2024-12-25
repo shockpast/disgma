@@ -29,7 +29,7 @@ DISCORD_OWNER_ID = int(os.getenv("DISCORD_OWNER_ID"))
 OS_TYPE = "linux" if platform.system() == "Linux" else "windows"
 EXECUTABLE_TYPE = ".exe" if OS_TYPE == "windows" else ""
 
-STEAMCMD_EXECUTABLE = STEAMCMD_PATH + "/steamcmd.exe"
+STEAMCMD_EXECUTABLE = STEAMCMD_PATH + ("steamcmd.exe" if OS_TYPE == "windows" else "steamcmd.sh")
 WORKSHOP_PATH = STEAMCMD_PATH + f"/steamapps/workshop/content/{os.getenv('STEAMCMD_APPID')}"
 ###
 
