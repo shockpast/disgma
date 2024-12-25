@@ -2,6 +2,8 @@
 
 A sophisticated Discord bot designed for downloading and managing Steam Workshop content through SteamCMD integration.
 
+![preview](assets/preview.gif)
+
 ## Installation
 
 ### SteamCMD

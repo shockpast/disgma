@@ -1,5 +1,4 @@
 data
-binaries/windows
-binaries/linux
+binaries
 __pycache__
 .env

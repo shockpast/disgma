@@ -22,7 +22,7 @@ APP_ID = os.getenv('STEAMCMD_APPID')
 ITEM_ID = os.getenv('STEAMCMD_ITEMID')
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-DISCORD_OWNER_ID = os.getenv("DISCORD_OWNER_ID")
+DISCORD_OWNER_ID = int(os.getenv("DISCORD_OWNER_ID"))
 ###
 
 ### vars
