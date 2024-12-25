@@ -1,0 +1,5 @@
+data
+binaries/windows
+binaries/linux
+__pycache__
+.env
