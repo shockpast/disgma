@@ -29,7 +29,7 @@ DISCORD_OWNER_ID = int(os.getenv("DISCORD_OWNER_ID"))
 OS_TYPE = "linux" if platform.system() == "Linux" else "windows"
 EXECUTABLE_TYPE = ".exe" if OS_TYPE == "windows" else ""
 
-STEAMCMD_EXECUTABLE = STEAMCMD_PATH + ("steamcmd.exe" if OS_TYPE == "windows" else "steamcmd.sh")
+STEAMCMD_EXECUTABLE = STEAMCMD_PATH + ("/steamcmd.exe" if OS_TYPE == "windows" else "/steamcmd.sh")
 WORKSHOP_PATH = STEAMCMD_PATH + f"/steamapps/workshop/content/{os.getenv('STEAMCMD_APPID')}"
 ###
 
@@ -49,16 +49,18 @@ async def download_worker(user_id: int, item_id: int, interaction: discord.Inter
     start = time.time()
 
     process = await asyncio.create_subprocess_shell(
-      f"{STEAMCMD_EXECUTABLE} +login anonymous +workshop_download_item {APP_ID} {item_id} +quit",
-      stdout=asyncio.subprocess.DEVNULL,
-      stderr=asyncio.subprocess.DEVNULL
+      f"{STEAMCMD_EXECUTABLE} +login anonymous +workshop_download_item {APP_ID} {item_id} validate +quit",
+      stdout=asyncio.subprocess.PIPE,
+      stderr=asyncio.subprocess.PIPE
     )
     await process.wait()
 
-    if not os.path.exists("./data/"):
+    if not os.path.exists(DATA_PATH):
       return await interaction.channel.send("`data` directory not found")
-    if not os.path.exists(f"./binaries/{OS_TYPE}/fastgmad{EXECUTABLE_TYPE}"):
+    if not os.path.exists(f"{BINARIES_PATH}/{OS_TYPE}/fastgmad{EXECUTABLE_TYPE}"):
       return await interaction.channel.send("`fastgmad` binary not found")
+    if not os.path.exists(f"{WORKSHOP_PATH}/{item_id}"):
+      return await interaction.channel.send(f"no files found for item `{item_id}`")
 
     os.makedirs(f"{DATA_PATH}/{item_id}", exist_ok=True)
 
